@@ -22,24 +22,41 @@ const s3 = new AWS.S3();
 const BUCKET = process.env.AWS_S3_BUCKET || "";
 
 
-app.get(/.*/ , async (req ,res) => {
-    const host = req.hostname;      //entire url
-    const id = host.split(".")[0];
-    const filepath = req.path;
-    const key = `main/${id}/${filepath}`
+app.get(/.*/, async (req, res) => {
+  const host = req.hostname;
+  const id = host.split(".")[0];
 
+  let filepath = req.path;
+
+  // Fix root path
+  if (filepath === "/" || filepath === "") {
+    filepath = "/index.html";
+  }
+
+  const key = `main/${id}${filepath}`;
+  console.log("Fetching S3 key:", key);
+
+  try {
     const contents = await s3.getObject({
-    Bucket : BUCKET,
-    Key: key || ""
-}).promise()
+      Bucket: BUCKET,
+      Key: key
+    }).promise();
 
-const type = filepath.endsWith("html") ? "text/html" : filepath.endsWith("css") ? "text/css" : "application/javascript"
+    const type =
+      filepath.endsWith(".html") ? "text/html" :
+      filepath.endsWith(".css") ? "text/css" :
+      filepath.endsWith(".svg") ? "image/svg+xml" :
+      filepath.endsWith(".png") ? "image/png" :
+      filepath.endsWith(".jpg") || filepath.endsWith(".jpeg") ? "image/jpeg" :
+      "application/javascript";
 
-res.set("Content-Type" , type);
-res.send(contents.Body);
-
-
-})
+    res.set("Content-Type", type);
+    res.send(contents.Body);
+  } catch (err) {
+    console.error("S3 ERROR:", err);
+    res.status(404).send("File not found");
+  }
+});
 
 
 
