@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+console.log("working well");
 
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
